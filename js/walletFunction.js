@@ -18,14 +18,14 @@ function getTrustWalletInjectedProvider(
     { timeout } = { timeout: 3000 }
   ) {
 
-    // trustWallet是否存在
+
     trustWalletExist = ethereum.isTrust;
 
-    // 是否已经存在Provider
+
     injectedProviderExist =
       typeof window !== "undefined" && typeof window.ethereum !== "undefined";
 
-    // 获取trustWalletProvider
+
     injectedProvider = window["trustwallet"];
     
     ethersProvider = new ethers.providers.Web3Provider(injectedProvider);
